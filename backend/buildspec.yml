@@ -1,0 +1,61 @@
+version: 0.2
+
+# 🚀 CodeBuild para Backend Node.js
+# Deploy automático para Elastic Beanstalk
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing dependencies..."
+      - npm ci --only=production
+
+  pre_build:
+    commands:
+      - echo "Running pre-build tasks..."
+      - echo "Build started on `date`"
+      - echo "Node version:" && node --version
+      - echo "NPM version:" && npm --version
+      - echo "Running tests..."
+      - npm test || echo "No tests found"
+
+  build:
+    commands:
+      - echo "Building backend application..."
+      - echo "Creating deployment package..."
+      - zip -r backend-deployment.zip . -x "node_modules/*" "*.git*" "buildspec.yml"
+      - echo "Build completed on `date`"
+
+  post_build:
+    commands:
+      - echo "Deploying to Elastic Beanstalk..."
+      - |
+        VERSION_LABEL="backend-$(date +%Y%m%d-%H%M%S)"
+        aws s3 cp backend-deployment.zip s3://$EB_BUCKET_NAME/$VERSION_LABEL.zip
+        aws elasticbeanstalk create-application-version \
+          --application-name $EB_APPLICATION_NAME \
+          --version-label $VERSION_LABEL \
+          --source-bundle S3Bucket=$EB_BUCKET_NAME,S3Key=$VERSION_LABEL.zip
+        aws elasticbeanstalk update-environment \
+          --environment-name $EB_ENVIRONMENT_NAME \
+          --version-label $VERSION_LABEL
+      - echo "Backend deployment completed!"
+
+artifacts:
+  files:
+    - backend-deployment.zip
+  name: backend-build-$(date +%Y-%m-%d-%H-%M-%S)
+
+cache:
+  paths:
+    - node_modules/**/*
+
+env:
+  variables:
+    NODE_ENV: production
+  parameter-store:
+    EB_APPLICATION_NAME: /tasks-app/backend/eb-application
+    EB_ENVIRONMENT_NAME: /tasks-app/backend/eb-environment
+    EB_BUCKET_NAME: /tasks-app/backend/eb-bucket
+    DATABASE_URL: /tasks-app/backend/database-url

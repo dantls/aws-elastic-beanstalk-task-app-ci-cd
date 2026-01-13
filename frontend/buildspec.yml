@@ -1,0 +1,52 @@
+version: 0.2
+
+# 🚀 CodeBuild para Frontend React
+# Deploy automático para S3 + CloudFront
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing dependencies..."
+      - npm ci --only=production
+
+  pre_build:
+    commands:
+      - echo "Running pre-build tasks..."
+      - echo "Build started on `date`"
+      - echo "Node version:" && node --version
+      - echo "NPM version:" && npm --version
+
+  build:
+    commands:
+      - echo "Building React application..."
+      - npm run build
+      - echo "Build completed on `date`"
+
+  post_build:
+    commands:
+      - echo "Deploying to S3..."
+      - aws s3 sync build/ s3://$S3_BUCKET_NAME --delete
+      - echo "Invalidating CloudFront cache..."
+      - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
+      - echo "Frontend deployment completed!"
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: build
+  name: frontend-build-$(date +%Y-%m-%d-%H-%M-%S)
+
+cache:
+  paths:
+    - node_modules/**/*
+
+env:
+  variables:
+    NODE_ENV: production
+    GENERATE_SOURCEMAP: "false"
+    CI: "false"
+  parameter-store:
+    S3_BUCKET_NAME: /tasks-app/frontend/s3-bucket
+    CLOUDFRONT_DISTRIBUTION_ID: /tasks-app/frontend/cloudfront-id

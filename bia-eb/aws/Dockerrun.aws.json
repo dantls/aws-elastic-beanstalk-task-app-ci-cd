@@ -1,0 +1,12 @@
+{
+  "AWSEBDockerrunVersion": "1",
+  "Image": {
+    "Name": "219315608868.dkr.ecr.us-east-1.amazonaws.com/tasks-app-repo:20251212-124218",
+    "Update": "true"
+  },
+  "Ports": [
+    {
+      "ContainerPort": 80
+    }
+  ]
+}
