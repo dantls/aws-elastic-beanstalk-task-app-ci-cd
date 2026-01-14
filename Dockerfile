@@ -5,11 +5,11 @@ WORKDIR /frontend
 
 # Copiar package.json e instalar dependências
 COPY frontend/package*.json ./
-RUN npm ci --legacy-peer-deps --no-optional --no-audit
+RUN NODE_OPTIONS="--max-old-space-size=1536" npm ci --legacy-peer-deps --no-optional --no-audit
 
 # Copiar código e fazer build
 COPY frontend/ ./
-RUN npm run build
+RUN NODE_OPTIONS="--max-old-space-size=1536" npm run build
 
 # Stage 2: Backend + Frontend
 FROM node:18-alpine
