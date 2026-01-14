@@ -22,6 +22,9 @@ const AddTask = ({ onAdd, translations, language }) => {
 
   return (
     <form className="add-form" onSubmit={onSubmit}>
+      <h2 style={{ textAlign: 'center', marginBottom: '20px', color: 'var(--text-color)' }}>
+        CI/CD with Elastic Beanstalk
+      </h2>
       <div className="form-control">
         <label>{translations[language].task}</label>
         <input
