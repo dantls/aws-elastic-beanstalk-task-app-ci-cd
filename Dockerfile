@@ -5,7 +5,10 @@ WORKDIR /app/frontend
 
 # Copiar package.json do frontend
 COPY frontend/package*.json ./
-RUN npm ci --legacy-peer-deps
+
+# Instalar dependências com timeout e sem optional
+RUN npm ci --legacy-peer-deps --no-optional --prefer-offline --no-audit 2>&1 || \
+    npm install --legacy-peer-deps --no-optional --prefer-offline --no-audit
 
 # Copiar código do frontend e fazer build
 COPY frontend/ ./
@@ -18,16 +21,10 @@ WORKDIR /usr/src/app
 
 # Copiar package.json do backend
 COPY backend/package*.json ./
-RUN npm ci --only=production --no-audit
+RUN npm ci --only=production --no-audit --no-optional
 
 # Copiar código do backend
-COPY backend/api ./api
-COPY backend/lib ./lib
-COPY backend/config ./config
-COPY backend/database ./database
-COPY backend/index.js ./
-COPY backend/tustas.js ./
-COPY backend/db.js ./
+COPY backend/ ./
 
 # Copiar frontend buildado do stage anterior
 COPY --from=frontend-build /app/frontend/build ./client/build/
