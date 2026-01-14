@@ -1,33 +1,36 @@
-# Stage 1: Build do Frontend
-FROM node:18-alpine AS frontend-build
+# Stage 1: Build Frontend
+FROM node:18-alpine AS frontend-builder
 
-WORKDIR /app/frontend
+WORKDIR /frontend
 
-# Copiar package.json do frontend
+# Copiar package.json e instalar dependências
 COPY frontend/package*.json ./
+RUN npm ci --legacy-peer-deps --no-optional --no-audit
 
-# Instalar dependências com timeout e sem optional
-RUN npm ci --legacy-peer-deps --no-optional --prefer-offline --no-audit 2>&1 || \
-    npm install --legacy-peer-deps --no-optional --prefer-offline --no-audit
-
-# Copiar código do frontend e fazer build
+# Copiar código e fazer build
 COPY frontend/ ./
 RUN npm run build
 
-# Stage 2: Backend + Frontend buildado
+# Stage 2: Backend + Frontend
 FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
 # Copiar package.json do backend
 COPY backend/package*.json ./
-RUN npm ci --only=production --no-audit --no-optional
+RUN npm ci --only=production --no-audit
 
 # Copiar código do backend
-COPY backend/ ./
+COPY backend/api ./api
+COPY backend/lib ./lib
+COPY backend/config ./config
+COPY backend/database ./database
+COPY backend/index.js ./
+COPY backend/tustas.js ./
+COPY backend/db.js ./
 
 # Copiar frontend buildado do stage anterior
-COPY --from=frontend-build /app/frontend/build ./client/build/
+COPY --from=frontend-builder /frontend/build ./client/build
 
 EXPOSE 80
 CMD ["node", "index.js"]
